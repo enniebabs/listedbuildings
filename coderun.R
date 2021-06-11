@@ -14,14 +14,13 @@ library(sf)
   
   
 data<-read.csv("data/listedbuildings_north.csv")
+
 data <- data %>% filter(!is.na(ListEntry))
-View(data)
 data <-  st_as_sf(data , coords = c("Easting", "Northing")) %>% #converts to simple feature
   st_set_crs(.,27700) %>% 
   st_transform( ., 4326) %>%# - EPSG code as an integer
   mutate(longitude= st_coordinates(.)[,1],
          latitude = st_coordinates(.)[,2])
-  
   ui <- bootstrapPage(
     
     tags$head(
@@ -36,7 +35,7 @@ data <-  st_as_sf(data , coords = c("Easting", "Northing")) %>% #converts to sim
                   # Application title
                   titlePanel("Listed Buildings in the North of England"),
                   selectInput("region", "Region", choices = unique(data$Region), selected = ""),
-                   selectInput("grade", "Grade", choices = unique(data$Grade), selected = "II"),
+                   selectInput("grade", "Grade", choices = c("All",unique(data$Grade)), selected = "II"),
                   plotOutput("bargraph", height = 200)
                   
                   ),
@@ -61,6 +60,7 @@ server <- function(input, output) {
 grade <- reactive({
   input$grade
 })
+#set map details
 output$map<-renderLeaflet({
 
   data <- filter(data, Grade == input$grade, Region == input$region)
@@ -83,7 +83,7 @@ output$map<-renderLeaflet({
                      )
 })
   
-  # A reactive expression that returns the set of zips that are
+  # A reactive expression that returns the set of listed buildings that are
   # in bounds right now
  dataInBounds <- reactive({
    data <- filter(data, Grade == input$grade, Region == input$region)
@@ -93,29 +93,20 @@ output$map<-renderLeaflet({
     bounds <- input$map_bounds
     latRng <- range(bounds$north, bounds$south)
     lngRng <- range(bounds$east, bounds$west)
-    #View(lngRng)
+    
     subset(data,
            latitude >= latRng[1] & latitude <= latRng[2] &
              longitude >= lngRng[1] & longitude <= lngRng[2])
   })
   
  output$bargraph <- renderPlot({
-   # If no zipcodes are in view, don't plot
+   # If no listed buildings are in view, don't plot
    if (nrow(dataInBounds()) == 0)
      return(NULL)
-   xx <-dataInBounds()%>% 
+   countdata <-dataInBounds()%>% 
      group_by(Grade)%>% 
      summarise(countrecords = n())
-   
-  # hist(xx$count,
-    #  breaks = xx$Grade,
-     #   main = "SuperZIP score (visible zips)",
-     #   xlab = "Percentile",
-       # xlim = range(allzips$centile),
-     #   col = '#00DD00',
-      #  border = 'white')
-   #View(xx)
-   ggplot(data=xx, aes(x=Grade, y=countrecords)) +
+   ggplot(data=countdata, aes(x=Grade, y=countrecords)) +
      geom_bar(stat="identity", width=0.5)
  })
  
