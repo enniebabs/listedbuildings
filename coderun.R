@@ -35,7 +35,7 @@ data <-  st_as_sf(data , coords = c("Easting", "Northing")) %>% #converts to sim
                   # Application title
                   titlePanel("Listed Buildings in the North of England"),
                   selectInput("region", "Region", choices = unique(data$Region), selected = ""),
-                   selectInput("grade", "Grade", choices = c("All",unique(data$Grade)), selected = "II"),
+                   selectInput("grade", "Grade", choices = c(unique(data$Grade)), selected = "II"),
                   plotOutput("bargraph", height = 200)
                   
                   ),

@@ -5,9 +5,8 @@ account: enniebabs
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 4026299
-bundleId: 4515343
+bundleId: 4706242
 url: https://enniebabs.shinyapps.io/ListedBuildings/
-when: 1619319130.8
+when: 1623429550.04103
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: ListedBuildings_North.cpg|ListedBuildings_North.dbf|ListedBuildings_North.prj|ListedBuildings_North.sbn|ListedBuildings_North.sbx|ListedBuildings_North.shp|ListedBuildings_North.shp.xml|ListedBuildings_North.shx
