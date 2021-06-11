@@ -15,7 +15,7 @@ library(sf)
   
 data<-read.csv("data/listedbuildings_north.csv")
 data <- data %>% filter(!is.na(ListEntry))
-
+View(data)
 data <-  st_as_sf(data , coords = c("Easting", "Northing")) %>% #converts to simple feature
   st_set_crs(.,27700) %>% 
   st_transform( ., 4326) %>%# - EPSG code as an integer
@@ -36,8 +36,10 @@ data <-  st_as_sf(data , coords = c("Easting", "Northing")) %>% #converts to sim
                   # Application title
                   titlePanel("Listed Buildings in the North of England"),
                   selectInput("region", "Region", choices = unique(data$Region), selected = ""),
-                   selectInput("grade", "Grade", choices = unique(data$Grade), selected = "II")
-    ),
+                   selectInput("grade", "Grade", choices = unique(data$Grade), selected = "II"),
+                  plotOutput("bargraph", height = 200)
+                  
+                  ),
     
     tags$div(id="copyright",
              p("Data source : Historic England 2021. Contains Ordnance Survey data Crown copyright and 
@@ -60,6 +62,7 @@ grade <- reactive({
   input$grade
 })
 output$map<-renderLeaflet({
+
   data <- filter(data, Grade == input$grade, Region == input$region)
   plotMap <- leaflet() %>%
     
@@ -78,13 +81,46 @@ output$map<-renderLeaflet({
       clusterOptions = markerClusterOptions()) %>% 
     addLayersControl(baseGroups = c("Open Street Map", "Satellite")
                      )
+})
   
+  # A reactive expression that returns the set of zips that are
+  # in bounds right now
+ dataInBounds <- reactive({
+   data <- filter(data, Grade == input$grade, Region == input$region)
+   
+    if (is.null(input$map_bounds))
+      return(data[FALSE,])
+    bounds <- input$map_bounds
+    latRng <- range(bounds$north, bounds$south)
+    lngRng <- range(bounds$east, bounds$west)
+    #View(lngRng)
+    subset(data,
+           latitude >= latRng[1] & latitude <= latRng[2] &
+             longitude >= lngRng[1] & longitude <= lngRng[2])
+  })
   
-  
-  
-  
+ output$bargraph <- renderPlot({
+   # If no zipcodes are in view, don't plot
+   if (nrow(dataInBounds()) == 0)
+     return(NULL)
+   xx <-dataInBounds()%>% 
+     group_by(Grade)%>% 
+     summarise(countrecords = n())
+   
+  # hist(xx$count,
+    #  breaks = xx$Grade,
+     #   main = "SuperZIP score (visible zips)",
+     #   xlab = "Percentile",
+       # xlim = range(allzips$centile),
+     #   col = '#00DD00',
+      #  border = 'white')
+   #View(xx)
+   ggplot(data=xx, aes(x=Grade, y=countrecords)) +
+     geom_bar(stat="identity", width=0.5)
+ })
+ 
   
  # data <- filter(.data = data, Grade == input$grade)
-})
+
 }
 shinyApp(ui = ui, server = server)
